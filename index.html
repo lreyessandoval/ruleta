@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head runat="server">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>La ruleta Navideña</title>
+    <script src="js/Winwheel.min.js"></script>
+    <script src="js/TweenMax.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
+    <script src="js/sweetalert.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <link href="css/sweetalert.css" rel="stylesheet" />
+    <style>
+        body {
+            background-image: url('img/night-sky.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #canvasContainer {
+            background-image: url(img/image.png);
+            background-size: 15%;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        #particles-js {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="particles-js"></div>
+    <form id="form1" runat="server">
+
+        <div>
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="m-auto col-12 col-xl-6 text-center">
+                        <h1>La Ruleta Navideña</h1>
+                        <div id="canvasContainer" onclick="startRuleta();">
+                            <canvas id='Ruleta' style="width: 100%; height: auto;" width='700' height='690'>
+                                Canvas not supported, use another browser.
+                            </canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                var objRuleta;
+                var winningSegment;
+                var distnaciaX = 150;
+                var distnaciaY = 50;
+                var ctx;
+                var audioCampanas = new Audio('campanas.mp3');  // Create audio object for campanas.mp3
+                var contadorLanzamientos = 0;  // Contador de lanzamientos
+                var maxLanzamientos = 3;  // Máximo de lanzamientos permitidos
+
+                function startRuleta() {
+                    if (contadorLanzamientos < maxLanzamientos) {
+                        objRuleta.rotationAngle = 0;
+                        objRuleta.draw();
+                        DibujarTriangulo();
+                        audioCampanas.play();  // Play the campanas.mp3 sound
+                        objRuleta.startAnimation();
+                        contadorLanzamientos++;  // Incrementa el contador de lanzamientos
+                    } else {
+                        swal({
+                            title: "Has alcanzado el máximo de lanzamientos",
+                            text: "No puedes lanzar más de " + maxLanzamientos + " veces.",
+                            icon: "warning",
+                            button: "Aceptar",
+                        });
+                    }
+                }
+
+                function Mensaje() {
+                    winningSegment = objRuleta.getIndicatedSegment();
+                    SonidoFinal();
+                    swal({
+                        title: "Felicidades tu regalo es " + winningSegment.text + "",
+                        imageUrl: "img/image.png",
+                        showCancelButton: true,
+                        confirmButtonColor: "#e74c3c",
+                        confirmButtonText: "Probar de Nuevo",
+                        cancelButtonText: "Quiero mi Regalo",
+                        closeOnConfirm: true,
+                        closeOnCancel: true
+                    },
+                        function (isConfirm) {
+                            objRuleta.stopAnimation(false);
+
+                            if (isConfirm) {
+                                startRuleta();
+                            } else {
+                                // Aquí puedes agregar cualquier acción adicional si el usuario no quiere probar de nuevo
+                            }
+                        });
+                }
+
+                function DibujarTriangulo() {
+                    distnaciaX = 150;
+                    distnaciaY = 50;
+                    ctx = objRuleta.ctx;
+                    ctx.strokeStyle = 'navy';
+                    ctx.fillStyle = '#000000';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(distnaciaX + 170, distnaciaY + 5);
+                    ctx.lineTo(distnaciaX + 230, distnaciaY + 5);
+                    ctx.lineTo(distnaciaX + 200, distnaciaY + 40);
+                    ctx.lineTo(distnaciaX + 171, distnaciaY + 5);
+                    ctx.stroke();
+                    ctx.fill();
+                }
+
+                function DibujarRuleta(ArregloElementos) {
+
+                    objRuleta = new Winwheel({
+                        'canvasId': 'Ruleta',
+                        'numSegments': ArregloElementos.length,
+                        'outerRadius': 270,
+                        'innerRadius': 80,
+                        'segments': ArregloElementos,
+                        'animation':
+                        {
+                            'type': 'spinToStop',
+                            'duration': 4,
+                            'spins': 15,
+                            'callbackFinished': 'Mensaje()',
+                            'callbackAfter': 'DibujarTriangulo()'
+
+                        },
+
+                    });
+
+                    DibujarTriangulo();
+                }
+                function leerElementos() {
+                    var Elementos = ["$50,000.-", "$53,000.-", "$55,000.-", "$57,000.-", "$60,000.-", "$65,000.-", "Carbón"];
+                    Elementos = Elementos.sort(function () { return 0.5 - Math.random() });
+
+                    var ElementosRuleta = [];
+                    var coloresNavideños = ['#FF0000', '#00FF00', '#008000', '#FF4500', '#FFD700', '#800000', '#00CED1', '#FF69B4', '#8B0000'];
+                    Elementos.forEach(function (Elemento) {
+                        if (Elemento) {
+                            const colorIndex = Math.floor(Math.random() * coloresNavideños.length);
+                            const color = coloresNavideños.splice(colorIndex, 1)[0];
+                            ElementosRuleta.push({ 'fillStyle': color, 'text': Elemento });
+                        }
+                    });
+                    DibujarRuleta(ElementosRuleta);
+                }
+                leerElementos();
+                var audio = new Audio('saludo.mp3');  // Create audio object and load desired file.
+                function SonidoFinal() {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    audio.play();
+                }
+
+            </script>
+        </div>
+    </form>
+    <script>
+        particlesJS.load('particles-js', 'particles.json', function () {
+            console.log('particles.js loaded - callback');
+        });
+    </script>
+</body>
+
+</html>
